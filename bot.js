@@ -22,7 +22,6 @@ async function startBot() {
 
         if (qr) {
             console.log('\n📱 පහත QR කෝඩ් එක ඔබේ WhatsApp එකෙන් ස්කෑන් කරන්න:\n');
-            // GitHub Actions වල QR එක කුඩාවට සහ පැහැදිලිව පෙන්වීමට
             qrcode.generate(qr, { small: true });
         }
 
@@ -57,7 +56,7 @@ async function startBot() {
 
             // 1. Hi කමාන්ඩ් එක
             if (cleanText === 'hi') {
-                await sock.sendMessage(senderJid, { text: 'Hello! GitHub Actions වලත් බොට් වැඩ කරනවා! 🎉' });
+                await sock.sendMessage(senderJid, { text: 'Hello! බොට් මාර විදිහට වැඩ කරනවා! 🎉' });
             }
 
             // 2. .phub කමාන්ඩ් එක
@@ -90,7 +89,7 @@ async function startBot() {
                 }
             }
 
-            // 3. .download කමාන්ඩ් එක
+            // 3. .download කමාන්ඩ් එක (වැරදි ෆයිල් සෙවුම් දෝෂ විසඳූ ස්ථාවර ක්‍රමය)
             if (cleanText.startsWith('.download ')) {
                 const videoUrl = text.slice(10).trim();
                 if (!videoUrl) {
@@ -98,12 +97,13 @@ async function startBot() {
                     return;
                 }
 
-                await sock.sendMessage(senderJid, { text: '⬇️ වීඩියෝව ඩවුන්ලෝඩ් වෙමින් පවතී... ටිකක් ඉන්න. ⏳' });
-
-                const uniqueId = Date.now();
-                const outputTemplate = `video_${uniqueId}.%(ext)s`;
-
                 try {
+                    await sock.sendMessage(senderJid, { text: '⬇️ වීඩියෝව ඩවුන්ලෝඩ් වෙමින් පවතී... ටිකක් ඉන්න. ⏳' });
+
+                    const uniqueId = Date.now();
+                    const outputTemplate = `video_${uniqueId}.%(ext)s`;
+
+                    // වීඩියෝව ඩවුන්ලෝඩ් කිරීම
                     await youtubedl(videoUrl, {
                         output: outputTemplate,
                         format: 'best[ext=mp4]/best',
@@ -111,22 +111,26 @@ async function startBot() {
                         preferFreeFormats: true,
                     });
 
+                    // ෆෝල්ඩරයෙන් අදාළ ෆයිල් එක නිවැරදිව සොයාගැනීම
                     const files = fs.readdirSync(__dirname);
-                    const downloadedFile = files.find(f => f.startsWith(`video_${uniqueId}`));
+                    const downloadedFile = files.find(f => f.startsWith(`video_${uniqueId}_`) || f.startsWith(`video_${uniqueId}.`));
 
                     if (!downloadedFile) {
                         await sock.sendMessage(senderJid, { text: '❌ ඩවුන්ලෝඩ් වූ ෆයිල් එක සොයාගත නොහැකි විය.' });
                         return;
                     }
 
+                    // වීඩියෝව යැවීම
                     await sock.sendMessage(senderJid, {
                         video: { url: downloadedFile },
                         caption: '✅ මෙන්න ඔබ ඉල්ලූ වීඩියෝව!'
                     });
 
+                    // සර්වර් එකෙන් ෆයිල් එක මකා දැමීම
                     if (fs.existsSync(downloadedFile)) {
                         fs.unlinkSync(downloadedFile);
                     }
+                    console.log('✅ වීඩියෝව සාර්ථකව යවා මකා දමන ලදී!');
 
                 } catch (dlError) {
                     console.error('DL Error:', dlError);
