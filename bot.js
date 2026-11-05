@@ -89,8 +89,7 @@ async function startBot() {
                 }
             }
 
-            // 3. .download කමාන්ඩ් එක (වැරදි ෆයිල් සෙවුම් දෝෂ විසඳූ ස්ථාවර ක්‍රමය)
-            // 3. .download කමාන්ඩ් එක (Fixed File Finder)
+            // 3. .download කමාන්ඩ් එක (Fixed & Flexible File Finder)
             if (cleanText.startsWith('.download ')) {
                 const videoUrl = text.slice(10).trim();
                 if (!videoUrl) {
@@ -112,7 +111,7 @@ async function startBot() {
                         preferFreeFormats: true,
                     });
 
-                    // ෆෝල්ඩරයෙන් අදාළ uniqueId එක අඩංගු ඕනෑම වීඩියෝ ෆයිල් එකක් සෙවීම
+                    // ෆෝල්ඩරයෙන් අදාළ uniqueId එක සහ වීඩියෝ එක්ස්ටෙන්ෂන් එක ඇති ෆයිල් එක නිවැරදිව සෙවීම
                     const files = fs.readdirSync(__dirname);
                     const downloadedFile = files.find(f => f.includes(`video_${uniqueId}`) && (f.endsWith('.mp4') || f.endsWith('.mkv') || f.endsWith('.webm') || f.endsWith('.mov')));
 
@@ -121,40 +120,13 @@ async function startBot() {
                         return;
                     }
 
-                    // වීඩියෝව යැවීම
+                    // වීඩියෝව WhatsApp වෙත යැවීම
                     await sock.sendMessage(senderJid, {
                         video: { url: downloadedFile },
                         caption: '✅ මෙන්න ඔබ ඉල්ලූ වීඩියෝව!'
                     });
 
-                    // සර්වර් එකෙන් ෆයිල් එක මකා දැමීම
-                    if (fs.existsSync(downloadedFile)) {
-                        fs.unlinkSync(downloadedFile);
-                    }
-                    console.log('✅ වීඩියෝව සාර්ථකව යවා මකා දමන ලදී!');
-
-                } catch (dlError) {
-                    console.error('DL Error:', dlError);
-                    await sock.sendMessage(senderJid, { text: '❌ ඩවුන්ලෝඩ් කිරීමේ දෝෂයක් සිදු විය.' });
-                }
-            }
-
-                    // ෆෝල්ඩරයෙන් අදාළ ෆයිල් එක නිවැරදිව සොයාගැනීම
-                    const files = fs.readdirSync(__dirname);
-                    const downloadedFile = files.find(f => f.startsWith(`video_${uniqueId}_`) || f.startsWith(`video_${uniqueId}.`));
-
-                    if (!downloadedFile) {
-                        await sock.sendMessage(senderJid, { text: '❌ ඩවුන්ලෝඩ් වූ ෆයිල් එක සොයාගත නොහැකි විය.' });
-                        return;
-                    }
-
-                    // වීඩියෝව යැවීම
-                    await sock.sendMessage(senderJid, {
-                        video: { url: downloadedFile },
-                        caption: '✅ මෙන්න ඔබ ඉල්ලූ වීඩියෝව!'
-                    });
-
-                    // සර්වර් එකෙන් ෆයිල් එක මකා දැමීම
+                    // සර්වර් එකෙන් ෆයිල් එක මකා දැමීම (Storage ක්ලීන් කිරීමට)
                     if (fs.existsSync(downloadedFile)) {
                         fs.unlinkSync(downloadedFile);
                     }
