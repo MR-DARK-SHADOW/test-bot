@@ -1,0 +1,29 @@
+name: WhatsApp Bot Runner
+
+on:
+  workflow_dispatch: # අපිට ගිට්හබ් වෙබ් අඩුවෙන් අතින් (Manual) 'Run workflow' ක්ලික් කරලා ස්ටාර්ට් කරන්න පුළුවන්
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Repository එක ක්ලෝන් කරගැනීම (Check out code)
+      uses: actions/checkout@v4
+
+    - name: Node.js සෙට්අප් කිරීම
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: පැකේජස් සහ yt-dlp/ffmpeg ඉන්ස්ටෝල් කිරීම
+      run: |
+        npm install
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+
+    - name: බොට් එක ස්ටාර්ට් කිරීම (Run Bot)
+      run: |
+        node bot.js
+      env:
+        CI: true
