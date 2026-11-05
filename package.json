@@ -1,0 +1,17 @@
+{
+  "name": "whatsapp-phub-bot",
+  "version": "1.0.0",
+  "description": "A stable WhatsApp bot featuring PornHub search and video download with Baileys 6.7.24",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "6.7.24",
+    "pino": "^8.19.0",
+    "pornhub.js": "^1.0.8",
+    "qrcode-terminal": "^0.12.0",
+    "youtube-dl-exec": "^2.5.4"
+  }
+}
