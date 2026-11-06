@@ -132,7 +132,10 @@ async function startBot() {
                     }, 5000);
 
                 } catch (dlError) {
-                    console.error('DL Error:', dlError);
+                  console.error('DL Error:', dlError);
+console.error('Error Message:', dlError.message);
+console.error('Error Code:', dlError.code);
+console.error('Error Stderr:', dlError.stderr);
                     await sock.sendMessage(senderJid, { text: '❌ ඩවුන්ලෝඩ් කිරීමේ දෝෂයක් සිදු විය.' });
                 }
             }
