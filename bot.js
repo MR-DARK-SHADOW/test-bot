@@ -3,6 +3,7 @@ const { Boom } = require('@hapi/boom');
 const qrcode = require('qrcode-terminal');
 const youtubedl = require('youtube-dl-exec');
 const fs = require('fs');
+const path = require('path');
 const { PornHub } = require('pornhub.js');
 const pino = require('pino');
 
@@ -43,8 +44,8 @@ async function startBot() {
 
     sock.ev.on('messages.upsert', async (m) => {
         try {
-            const msg = m.messages[0];
-            if (!msg.message || msg.key.fromMe) return;
+            const msg = m.messages.at(0);
+            if (!msg?.message || msg.key.fromMe) return;
 
             const senderJid = msg.key.remoteJid;
             const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
@@ -54,12 +55,7 @@ async function startBot() {
 
             console.log(`\n📩 මැසේජ් එකක් ආවා: "${text}" (From: ${senderJid})`);
 
-            // 1. Hi කමාන්ඩ් එක
-            if (cleanText === 'hi') {
-                await sock.sendMessage(senderJid, { text: 'Hello! බොට් මාර විදිහට වැඩ කරනවා! 🎉' });
-            }
-
-            // 2. .phub කමාන්ඩ් එක
+            // 1. .phub කමාන්ඩ් එක (වීඩියෝ සෙවීම සඳහා)
             if (cleanText.startsWith('.phub ')) {
                 const query = text.slice(6).trim();
                 if (!query) {
@@ -71,7 +67,7 @@ async function startBot() {
 
                 try {
                     const searchResult = await pornhub.searchVideo(query);
-                    if (!searchResult || !searchResult.data || !searchResult.data.length) {
+                    if (!searchResult?.data?.length) {
                         await sock.sendMessage(senderJid, { text: '❌ ප්‍රතිඵල කිසිවක් හමුවී නැත.' });
                         return;
                     }
@@ -89,7 +85,7 @@ async function startBot() {
                 }
             }
 
-            // 3. .download කමාන්ඩ් එක (Fixed & Flexible File Finder)
+            // 2. .download කමාන්ඩ් එක (වීඩියෝ ඩවුන්ලෝඩ් කර යැවීම සඳහා)
             if (cleanText.startsWith('.download ')) {
                 const videoUrl = text.slice(10).trim();
                 if (!videoUrl) {
@@ -101,36 +97,36 @@ async function startBot() {
                     await sock.sendMessage(senderJid, { text: '⬇️ වීඩියෝව ඩවුන්ලෝඩ් වෙමින් පවතී... ටිකක් ඉන්න. ⏳' });
 
                     const uniqueId = Date.now();
-                    const outputTemplate = `video_${uniqueId}.%(ext)s`;
+                    const outputFileName = `video_${uniqueId}.mp4`;
+                    const outputPath = path.join(__dirname, outputFileName);
 
-                    // වීඩියෝව ඩවුන්ලෝඩ් කිරීම
+                    // yt-dlp හරහා නිශ්චිත පාත් එකට වීඩියෝව ඩවුන්ලෝඩ් කිරීම
                     await youtubedl(videoUrl, {
-                        output: outputTemplate,
+                        output: outputPath,
                         format: 'best[ext=mp4]/best',
                         noCheckCertificates: true,
                         preferFreeFormats: true,
                     });
 
-                    // ෆෝල්ඩරයෙන් අදාළ uniqueId එක සහ වීඩියෝ එක්ස්ටෙන්ෂන් එක ඇති ෆයිල් එක නිවැරදිව සෙවීම
-                    const files = fs.readdirSync(__dirname);
-                    const downloadedFile = files.find(f => f.includes(`video_${uniqueId}`) && (f.endsWith('.mp4') || f.endsWith('.mkv') || f.endsWith('.webm') || f.endsWith('.mov')));
-
-                    if (!downloadedFile) {
+                    // ෆයිල් එක ඇත්තටම ඩවුන්ලෝඩ් වී ඇත්දැයි පරීක්ෂා කිරීම
+                    if (!fs.existsSync(outputPath)) {
                         await sock.sendMessage(senderJid, { text: '❌ ඩවුන්ලෝඩ් වූ ෆයිල් එක සොයාගත නොහැකි විය.' });
                         return;
                     }
 
                     // වීඩියෝව WhatsApp වෙත යැවීම
                     await sock.sendMessage(senderJid, {
-                        video: { url: downloadedFile },
+                        video: { url: outputPath },
                         caption: '✅ මෙන්න ඔබ ඉල්ලූ වීඩියෝව!'
                     });
 
-                    // සර්වර් එකෙන් ෆයිල් එක මකා දැමීම (Storage ක්ලීන් කිරීමට)
-                    if (fs.existsSync(downloadedFile)) {
-                        fs.unlinkSync(downloadedFile);
-                    }
-                    console.log('✅ වීඩියෝව සාර්ථකව යවා මකා දමන ලදී!');
+                    // යැවීමෙන් පසු සර්වර් එකෙන් තාවකාලික ෆයිල් එක ඉවත් කිරීම
+                    setTimeout(() => {
+                        if (fs.existsSync(outputPath)) {
+                            fs.unlinkSync(outputPath);
+                            console.log('✅ තාවකාලික වීඩියෝ ෆයිල් එක මකා දමන ලදී!');
+                        }
+                    }, 5000);
 
                 } catch (dlError) {
                     console.error('DL Error:', dlError);
