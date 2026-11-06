@@ -3,7 +3,6 @@ const { Boom } = require('@hapi/boom');
 const qrcode = require('qrcode-terminal');
 const youtubedl = require('youtube-dl-exec');
 const fs = require('fs');
-const path = require('path');
 const { PornHub } = require('pornhub.js');
 const pino = require('pino');
 
@@ -55,7 +54,7 @@ async function startBot() {
 
             console.log(`\n📩 මැසේජ් එකක් ආවා: "${text}" (From: ${senderJid})`);
 
-            // 1. .phub කමාන්ඩ් එක (වීඩියෝ සෙවීම සඳහා)
+            // 1. .phub කමාන්ඩ් එක
             if (cleanText.startsWith('.phub ')) {
                 const query = text.slice(6).trim();
                 if (!query) {
@@ -85,7 +84,7 @@ async function startBot() {
                 }
             }
 
-            // 2. .download කමාන්ඩ් එක (වීඩියෝ ඩවුන්ලෝඩ් කර යැවීම සඳහා)
+            // 2. .download කමාන්ඩ් එක (Flexible Folder Scanner)
             if (cleanText.startsWith('.download ')) {
                 const videoUrl = text.slice(10).trim();
                 if (!videoUrl) {
@@ -97,33 +96,37 @@ async function startBot() {
                     await sock.sendMessage(senderJid, { text: '⬇️ වීඩියෝව ඩවුන්ලෝඩ් වෙමින් පවතී... ටිකක් ඉන්න. ⏳' });
 
                     const uniqueId = Date.now();
-                    const outputFileName = `video_${uniqueId}.mp4`;
-                    const outputPath = path.join(__dirname, outputFileName);
+                    const outputTemplate = `video_${uniqueId}.%(ext)s`;
 
-                    // yt-dlp හරහා නිශ්චිත පාත් එකට වීඩියෝව ඩවුන්ලෝඩ් කිරීම
+                    // වීඩියෝව ඩවුන්ලෝඩ් කිරීම
                     await youtubedl(videoUrl, {
-                        output: outputPath,
+                        output: outputTemplate,
                         format: 'best[ext=mp4]/best',
                         noCheckCertificates: true,
                         preferFreeFormats: true,
                     });
 
-                    // ෆයිල් එක ඇත්තටම ඩවුන්ලෝඩ් වී ඇත්දැයි පරීක්ෂා කිරීම
-                    if (!fs.existsSync(outputPath)) {
+                    // 🛠️ ප්‍රධාන විසඳුම: ෆෝල්ඩරේ ඇතුළේ අදාළ uniqueId එක අඩංගු ඕනෑම වීඩියෝ ෆයිල් එකක් සොයා ගැනීම
+                    const files = fs.readdirSync(__dirname);
+                    const foundFileName = files.find(f => f.includes(`video_${uniqueId}`) && (f.endsWith('.mp4') || f.endsWith('.mkv') || f.endsWith('.webm') || f.endsWith('.mov')));
+
+                    if (!foundFileName) {
                         await sock.sendMessage(senderJid, { text: '❌ ඩවුන්ලෝඩ් වූ ෆයිල් එක සොයාගත නොහැකි විය.' });
                         return;
                     }
 
+                    const downloadedFilePath = require('path').join(__dirname, foundFileName);
+
                     // වීඩියෝව WhatsApp වෙත යැවීම
                     await sock.sendMessage(senderJid, {
-                        video: { url: outputPath },
+                        video: { url: downloadedFilePath },
                         caption: '✅ මෙන්න ඔබ ඉල්ලූ වීඩියෝව!'
                     });
 
-                    // යැවීමෙන් පසු සර්වර් එකෙන් තාවකාලික ෆයිල් එක ඉවත් කිරීම
+                    // යැවීමෙන් පසු සර්වර් එකෙන් ෆයිල් එක ඉවත් කිරීම
                     setTimeout(() => {
-                        if (fs.existsSync(outputPath)) {
-                            fs.unlinkSync(outputPath);
+                        if (fs.existsSync(downloadedFilePath)) {
+                            fs.unlinkSync(downloadedFilePath);
                             console.log('✅ තාවකාලික වීඩියෝ ෆයිල් එක මකා දමන ලදී!');
                         }
                     }, 5000);
