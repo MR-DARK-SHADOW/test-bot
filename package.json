@@ -1,17 +1,21 @@
+
 {
-  "name": "whatsapp-phub-bot",
+  "name": "mrfg-ai-lite",
   "version": "1.0.0",
-  "description": "A stable WhatsApp bot featuring PornHub search and video download with Baileys 6.7.24",
-  "main": "bot.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node index.js"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "6.7.24",
-    "pino": "^8.19.0",
-    "pornhub.js": "^1.0.8",
-    "qrcode-terminal": "^0.12.0",
-    "youtube-dl-exec": "^2.5.4"
+    "@google/genai": "^3.6.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "dotenv": "^18.0.10",
+    "pino": "^10.4.0",
+    "qrcode-terminal": "^0.12.0"
   }
 }
