@@ -1,28 +1,30 @@
-name: WhatsApp Bot CI
+
+name: Pake Pala AI Bot
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  build:
+  run-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
-    - name: Install FFmpeg
-      run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install Dependencies
+        run: npm ci
 
-    - name: Install dependencies
-      run: npm install
+      - name: Setup Environment
+        run: |
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
 
-    - name: Start Bot
-      run: npm start
+      - name: Start Pake Pala AI
+        run: npm start
